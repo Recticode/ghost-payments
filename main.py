@@ -8,13 +8,18 @@ def main():
     print(user_id)
 
     database.add_product("pro", 15.5)
-    database.buy_product(1, 1)
+    product_id = database.get_product_id("pro")
+
+    database.buy_product(user_id, product_id)
 
     orders = database.get_user_all_orders(user_id)
     print(orders)
 
     entitlements = database.get_user_all_entitlements(user_id)
     print(entitlements)
+
+    yes = database.does_user_have_entitlement(user_id, 1)
+    print(yes)
 
 
 

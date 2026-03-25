@@ -105,6 +105,23 @@ class Database:
         finally:
             conn.close()
 
+    def get_product_id(self, name):
+        try:
+            conn = sqlite3.connect(self.file_name)
+
+            cursor = conn.execute("SELECT id FROM products WHERE name = ?",
+                                  (name, ))
+
+            row = cursor.fetchone()
+            product_id = row[0] if row else None
+
+            conn.close()
+            return product_id
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
+
     def buy_product(self, user_id, product_id):
         try:
             conn = sqlite3.connect(self.file_name)
@@ -175,9 +192,25 @@ class Database:
         finally:
             conn.close()
 
+    def does_user_have_entitlement(self, user_id, product_id):
+        try:
+            conn = sqlite3.connect(self.file_name)
 
+            cursor = conn.execute("SELECT id FROM entitlements WHERE user_id = ? AND product_id = ?",
+                                  (user_id, product_id))
 
-    # show all entitlements relating to a user
+            row = cursor.fetchone()
+
+            yes = row[0] if row else None
+
+            conn.close()
+
+            return yes is not None
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
+
 
     # check if a user has a specific entitlement
 
