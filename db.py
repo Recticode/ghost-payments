@@ -116,7 +116,7 @@ class Database:
             conn.commit()
 
             cursor = conn.execute("""
-            SELECT price FROM products WHERE product_id = ?""",
+            SELECT price FROM products WHERE id = ?""",
                                   (product_id,))
 
             row = cursor.fetchone()
@@ -125,7 +125,7 @@ class Database:
                 return "Product does not exist"
 
             payment_gateway = PaymentGateway()
-            payment_status = payment_gateway.charge(user_id, price).status
+            payment_status = payment_gateway.charge(user_id, price)['status']
 
             if payment_status == "success":
                 conn.execute("UPDATE orders SET status = ? WHERE product_id = ?",
@@ -140,3 +140,30 @@ class Database:
             print(e)
         finally:
             conn.close()
+
+    def get_user_all_orders(self, user_id):
+        try:
+            conn = sqlite3.connect(self.file_name)
+
+            cursor = conn.execute("SELECT id, product_id, status FROM orders WHERE user_id = ?",
+                                (user_id, ))
+
+            rows = cursor.fetchall()
+
+            conn.close()
+
+            return rows
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
+
+
+
+    # show all entitlements relating to a user
+
+    # check if a user has a specific entitlement
+
+    # show all orders relating to a product
+
+    # show all entitlements relating to a product
