@@ -89,17 +89,17 @@ class Database:
         finally:
             conn.close()
 
-    def get_user_email(self, id):
+    def get_user_id(self, email):
         try:
             conn = sqlite3.connect(self.file_name)
 
-            cursor = conn.execute("SELECT email FROM users WHERE id = ?", (id,))
+            cursor = conn.execute("SELECT id FROM users WHERE email = ?", (email,))
 
             row = cursor.fetchone()
-            email = row[0] if row else None
+            user_id = row[0] if row else None
 
             conn.close()
-            return email
+            return user_id
         except Exception as e:
             print(e)
         finally:
@@ -147,6 +147,23 @@ class Database:
 
             cursor = conn.execute("SELECT id, product_id, status FROM orders WHERE user_id = ?",
                                 (user_id, ))
+
+            rows = cursor.fetchall()
+
+            conn.close()
+
+            return rows
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
+
+    def get_user_all_entitlements(self, user_id):
+        try:
+            conn = sqlite3.connect(self.file_name)
+
+            cursor = conn.execute("SELECT id, product_id FROM entitlements WHERE user_id = ?",
+                                  (user_id, ))
 
             rows = cursor.fetchall()
 
