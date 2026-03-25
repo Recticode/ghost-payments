@@ -101,7 +101,42 @@ class Database:
             conn.close()
             return email
         except Exception as e:
-            print("get error")
+            print(e)
+        finally:
+            conn.close()
+
+    def buy_product(self, user_id, product_id):
+        try:
+            conn = sqlite3.connect(self.file_name)
+
+            conn.execute("""
+            INSERT INTO orders (user_id, product_id, status) VALUES (?, ?, ?)""",
+                         (user_id, product_id, "pending"))
+
+            conn.commit()
+
+            cursor = conn.execute("""
+            SELECT price FROM products WHERE product_id = ?""",
+                                  (product_id,))
+
+            row = cursor.fetchone()
+            price = row[0] if row else None
+            if price is None:
+                return "Product does not exist"
+
+            payment_gateway = PaymentGateway()
+            payment_status = payment_gateway.charge(user_id, price).status
+
+            if payment_status == "success":
+                conn.execute("UPDATE orders SET status = ? WHERE product_id = ?",
+                             ("paid", product_id))
+                conn.execute("INSERT INTO entitlements (user_id, product_id) VALUES (?, ?)",
+                             (user_id, product_id))
+            else:
+                conn.execute("UPDATE orders SET status = ? WHERE product_id = ?",
+                             ("failed", product_id))
+            conn.commit()
+        except Exception as e:
             print(e)
         finally:
             conn.close()
