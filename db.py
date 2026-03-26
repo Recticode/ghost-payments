@@ -4,10 +4,20 @@ from payment import PaymentGateway
 class Database:
     def __init__(self, file_name):
         self.file_name = file_name
-        try:
-            conn = sqlite3.connect(file_name)
 
-            conn.execute("PRAGMA foreign_keys = ON;")
+    def _connect(self):
+        conn = sqlite3.connect(self.file_name)
+        conn.execute("PRAGMA foreign_keys = ON;")
+        return conn
+
+    def recreate_db(self):
+        try:
+            conn = self._connect()
+
+            conn.execute("DROP TABLE IF EXISTS entitlements;")
+            conn.execute("DROP TABLE IF EXISTS orders;")
+            conn.execute("DROP TABLE IF EXISTS products;")
+            conn.execute("DROP TABLE IF EXISTS users;")
 
             # users
             conn.execute("""
@@ -18,6 +28,16 @@ class Database:
             )
             """)
 
+            users = [
+                (f"user{i}", f"user{i}@example.com")
+                for i in range(1, 101)
+            ]
+
+            conn.executemany(
+                "INSERT INTO users (name, email) VALUES (?, ?)",
+                users
+            )
+
             # products
             conn.execute("""
             CREATE TABLE IF NOT EXISTS products (
@@ -26,6 +46,16 @@ class Database:
                 price FLOAT
             )
             """)
+
+            products = [
+                (f"product{i}", i * 9.99)
+                for i in range(1, 6)
+            ]
+
+            conn.executemany(
+                "INSERT INTO products (name, price) VALUES (?, ?)",
+                products
+            )
 
             # orders
             conn.execute("""
@@ -52,6 +82,12 @@ class Database:
 
             conn.commit()
             conn.close()
+
+            for i in range(1, 101, 3):
+                for j in range(2, 6, 2):
+                    product_id = self.get_product_id(f"product{j}")
+                    user_id = self.get_user_id(f"user{i}@example.com")
+                    self.buy_product(user_id, product_id)
         except Exception as e:
             print(e)
         finally:
@@ -59,7 +95,7 @@ class Database:
 
     def add_user(self, name, email):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             conn.execute(f"""
             INSERT INTO users(name, email) VALUES (?, ?)
@@ -75,7 +111,7 @@ class Database:
 
     def add_product(self, name, price):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             conn.execute("""
             INSERT INTO products(name, price) VALUES (?, ?)
@@ -91,7 +127,7 @@ class Database:
 
     def get_user_id(self, email):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id FROM users WHERE email = ?", (email,))
 
@@ -107,7 +143,7 @@ class Database:
 
     def get_product_id(self, name):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id FROM products WHERE name = ?",
                                   (name, ))
@@ -124,7 +160,7 @@ class Database:
 
     def buy_product(self, user_id, product_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             conn.execute("""
             INSERT INTO orders (user_id, product_id, status) VALUES (?, ?, ?)""",
@@ -155,7 +191,7 @@ class Database:
 
     def get_user_all_orders(self, user_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id, product_id, status FROM orders WHERE user_id = ?",
                                 (user_id, ))
@@ -172,7 +208,7 @@ class Database:
 
     def get_user_all_entitlements(self, user_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id, product_id FROM entitlements WHERE user_id = ?",
                                   (user_id, ))
@@ -189,7 +225,7 @@ class Database:
 
     def does_user_have_entitlement(self, user_id, product_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id FROM entitlements WHERE user_id = ? AND product_id = ?",
                                   (user_id, product_id))
@@ -208,7 +244,7 @@ class Database:
 
     def get_product_all_orders(self, product_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id, user_id FROM orders WHERE product_id = ?",
                                   (product_id, ))
@@ -225,7 +261,7 @@ class Database:
 
     def get_product_all_entitlements(self, product_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT id, user_id FROM entitlements WHERE product_id = ?",
                                   (product_id, ))
@@ -242,7 +278,7 @@ class Database:
 
     def get_product_price(self, product_id):
         try:
-            conn = sqlite3.connect(self.file_name)
+            conn = self._connect()
 
             cursor = conn.execute("SELECT price FROM products WHERE id = ?",
                                   (product_id, ))
