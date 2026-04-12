@@ -4,6 +4,7 @@ from payment import PaymentGateway
 class Database:
     def __init__(self, file_name):
         self.file_name = file_name
+        self.payment_gateway = PaymentGateway()
 
     def _connect(self):
         conn = sqlite3.connect(self.file_name)
@@ -172,8 +173,7 @@ class Database:
             if price is None:
                 return "Product does not exist"
 
-            payment_gateway = PaymentGateway()
-            payment_status = payment_gateway.charge(user_id, price)['status']
+            payment_status = self.payment_gateway.charge(user_id, price)['status']
 
             if payment_status == "success":
                 conn.execute("UPDATE orders SET status = ? WHERE product_id = ?",
